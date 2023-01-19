@@ -50,7 +50,7 @@
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Build-Number>${buildNumber}</Build-Number>
             <Private-Package>opencast-studio.*</Private-Package>
-            <Http-Alias>/studio</Http-Alias>
+            <Http-Alias>/studio-ui</Http-Alias>
             <Http-Spa-Redirect>true</Http-Spa-Redirect>
             <Http-Classpath>/opencast-studio</Http-Classpath>
             <Http-Welcome>index.html</Http-Welcome>

@@ -5,12 +5,12 @@ Studio is a small web application that runs in the browser and allows the user t
 
 Studio uses the recording capabilities built into modern browsers to record audio and video streams. The recording happens completely in the user's browser: no server is involved in that part. Network access is only needed to initially load the application and to (optionally) upload the videos to an Opencast instance.
 
-This module includes Studio directly into Opencast and pre-configures it accordingly. It is available at `https://yourserver/studio`. Note: Studio is developed [outside of the main repository](https://github.com/elan-ev/opencast-studio): you can find additional documentation in that repository. Please also report bugs and feature requests for Studio to that repository, unless it's a bug related to the integration in Opencast.
+This module includes Studio directly into Opencast and pre-configures it accordingly. It is available at `https://yourserver/studio-ui`. Note: Studio is developed [outside of the main repository](https://github.com/elan-ev/opencast-studio): you can find additional documentation in that repository. Please also report bugs and feature requests for Studio to that repository, unless it's a bug related to the integration in Opencast.
 
 
 ## Giving users access to Studio
 
-The path `/studio` is accessible by users with the role `ROLE_ADMIN` or `ROLE_STUDIO`. The APIs used by Studio (`/ingest/*` and `info/me.json`) are also accessible if the user has `ROLE_STUDIO`.
+The path `/studio-ui` is accessible by users with the role `ROLE_ADMIN` or `ROLE_STUDIO`. The APIs used by Studio (`/ingest/*`, `info/me.json` and `studio/series.json`) are also accessible if the user has `ROLE_STUDIO`.
 
 The preferred way to let your users access Studio is via LTI. Remember to configure your LTI users to have the role `ROLE_STUDIO` so that they can access Studio and all APIs used by Studio.
 

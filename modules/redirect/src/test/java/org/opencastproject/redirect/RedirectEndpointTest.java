@@ -51,7 +51,7 @@ public class RedirectEndpointTest {
   /** Test the `POST /redirect/get` endpoint */
   @Test
   public void testPostRedirectGet() throws MalformedURLException {
-    String target = "/studio";
+    String target = "/studio-ui";
     Response response = endpoint.get(target, uriInfo);
     Assert.assertEquals(303, response.getStatus());
     String expected = new URL(uriInfo.getBaseUri().toURL(), target).toString();

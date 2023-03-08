@@ -259,14 +259,18 @@ class TranslatedSeries extends React.Component<SeriesProps, SeriesState> {
                     {this.props.t("LTI.RESULT_HEADING", headingOpts)}
                 </header>
                 <div className="list-group">
-                    {sr.results.map((episode) => <SeriesEpisode
+                    {sr.results.map((episode) => {
+
+                    if (episode.isLive) return <></>
+
+                    return <SeriesEpisode
                         key={episode.id}
                         episode={episode}
                         deleteCallback={this.isInstructor() && this.hasDeletion() ? this.deleteEventCallback.bind(this) : undefined}
                         editCallback={this.isInstructor() && this.hasEdit() ? this.editEpisodeCallback.bind(this) : undefined}
                         annotateCallback={this.hasAnnotate() ? this.annotateEpisodeCallback.bind(this) : undefined}
                         downloadCallback={this.hasDownload() ? this.downloadEventCallback.bind(this) : undefined}
-                        t={this.props.t} />)}
+                        t={this.props.t} />})}
                 </div>
                 <footer className="mt-3">
                     <Pagination

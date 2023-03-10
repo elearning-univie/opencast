@@ -261,8 +261,6 @@ class TranslatedSeries extends React.Component<SeriesProps, SeriesState> {
                 <div className="list-group">
                     {sr.results.map((episode) => {
 
-                    console.log(episode)
-
                     if (episode.isLive) return <></>
 
                     return <SeriesEpisode

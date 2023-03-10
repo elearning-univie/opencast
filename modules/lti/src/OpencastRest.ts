@@ -226,7 +226,7 @@ export async function searchEpisode(
                     })),
                 tracks: parseTracksFromResult(result)
             },
-            isLive: result.mediapackage?.media?.track?.findIndex((track: any) => track.live === true)
+            isLive: result.mediapackage?.media?.track?.findIndex((track: any) => track.live)
         })),
         total: response.data["search-results"].total,
         limit: response.data["search-results"].limit,

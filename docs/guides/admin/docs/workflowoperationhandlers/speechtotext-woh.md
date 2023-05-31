@@ -6,9 +6,14 @@ ID: `speechtotext`
 Description
 -----------
 
-The speech to text operation can be used to generate subtitles for Videos or Audio files. Currently, there are two STT
-engines available, [Whisper](../modules/transcription.modules/whisper.md) and 
-[Vosk](../modules/transcription.modules/vosk.md). The subtitles file format ist WebVTT.
+The speech to text operation can be used to generate subtitles for Videos or Audio files. Currently, there are three STT
+engines available:
+
+* [Whisper](../modules/transcription.modules/whisper.md)
+* [Vosk](../modules/transcription.modules/vosk.md)
+* [WhisperC++](../modules/transcription.modules/whispercpp.md)
+
+The subtitles file format is WebVTT.
 
 
 Parameter Table
@@ -21,8 +26,8 @@ Parameter Table
 | target-element     | no       | attachment        | Define where to append the subtitles file. Possibilities are: as a 'track' or as an 'attachment'. The default is "attachment".                     |
 | language-code      | no       | de                | The language of the video or audio source (default is "eng"). Vosk only: It has to match the name of the language model directory. See 'vosk-cli'. |
 | language-fallback  | yes*     | en                | The fallback value if the dublin core/media package language field is not present.                                                                 |
-| target-tags        | no       | delivery/captions | Tags for the subtitle file (Whisper only: If no `language-code`,the tag `lang:{code}` will be auto generated)                                      |
- | translate          | no       | true              | Transcription is translated into English, valid values `true` or `false` (Whisper Only)                                                            |
+| target-tags        | no       | delivery/captions | Tags for the subtitle file (Whisper/WhisperC++ Only: If no `language-code`, the tag `lang:{code}` will be auto generated)                                      |
+ | translate          | no       | true              | Transcription is translated into English, valid values `true` or `false` (Whisper/WhisperC++ Only)                                                            |
 
  *Vosk Only, default value can be modified on Vosk config file.
 

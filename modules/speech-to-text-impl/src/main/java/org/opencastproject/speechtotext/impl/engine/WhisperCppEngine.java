@@ -170,15 +170,15 @@ public class WhisperCppEngine implements SpeechToTextEngine {
     if (language.isBlank()) {
       JSONParser jsonParser = new JSONParser();
       try {
-        FileReader reader = new FileReader(preparedOutputFile.getAbsolutePath().replaceFirst("[.][^.]+$", "")
-            + ".json");
+        FileReader reader = new FileReader(preparedOutputFile.getAbsolutePath().replaceFirst("[.][^.]+$", "") + ".json");
         Object obj = jsonParser.parse(reader);
         JSONObject jsonObject = (JSONObject) obj;
-        language = (String) jsonObject.get("language");
+        JSONObject resultObject = (JSONObject) jsonObject.get("result");
+        String language = (String) resultObject.get("language");
         logger.info("Language detected by WhisperC++: {}", language);
       } catch (Exception e) {
-        logger.info("Error reading WhisperC++ JSON file for: {}", mediaFile);
-        throw new SpeechToTextEngineException(e);
+          logger.info("Error reading WhisperC++ JSON file for: {}", mediaFile);
+          throw new SpeechToTextEngineException(e);
       }
     }
 

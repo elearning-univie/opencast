@@ -30,6 +30,7 @@ export interface SearchEpisodeResult {
     readonly mediapackage: MediaPackage;
     readonly languageShortCode: string;
     readonly licenseKey: string;
+    readonly isLive: boolean;
 }
 
 export interface SearchEpisodeResults {
@@ -63,6 +64,10 @@ export interface EventMetadataContainer {
 
 export interface LtiData {
     readonly roles: string[];
+}
+
+export interface Config {
+    readonly excludeLiveStreams: boolean;
 }
 
 export function findField(
@@ -133,6 +138,20 @@ export async function getEventMetadata(eventId?: string): Promise<EventMetadataC
 
 export async function copyEventToSeries(eventId: string, targetSeries: string): Promise<{}> {
     return axios.post(hostAndPort() + "/lti-service-gui/" + eventId + "/copy?target_series=" + targetSeries);
+}
+
+export async function getConfig(): Promise<Config> {
+    const response = await axios.get<any>(hostAndPort() + '/ui/config/ltitools/config.json');
+    return {
+        excludeLiveStreams: response.data.excludeLiveStreams !== undefined ? response.data.excludeLiveStreams : false
+    }
+
+}
+
+export function filterLiveEvents(sr: SearchEpisodeResults) {
+    const filtered_results = sr.results.filter(result => result.isLive === false);
+    const filtered_sr : SearchEpisodeResults = {results: filtered_results, total : filtered_results.length, limit : sr.limit, offset : sr.offset};
+    return filtered_sr
 }
 
 /**
@@ -224,7 +243,8 @@ export async function searchEpisode(
                         url: attachment.url
                     })),
                 tracks: parseTracksFromResult(result)
-            }
+            },
+            isLive: result.mediapackage.media.track !== undefined ? result.mediapackage.media.track.isLive : false
         })),
         total: response.data.total,
         limit: response.data.limit,

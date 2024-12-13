@@ -78,6 +78,24 @@ public class WaasEngine implements SpeechToTextEngine {
   private static final String WAAS_TIMEOUT = "waas.timeout";
   private static final String WAAS_FALLBACK_LANGUAGE = "waas.fallback-language";
 
+  /** Config key for automatic audio encoding */
+  private static final String AUTO_ENCODING_CONFIG_KEY = "waas.auto-encode";
+
+  /** Default value for automatic audio encoding */
+  private static final Boolean AUTO_ENCODING_DEFAULT = true;
+
+  /** If Opencast should automatically re-encode tracks so that they are compatible with Whisper.cpp */
+  private boolean autoEncode = AUTO_ENCODING_DEFAULT;
+
+  /** The key to look for in the service configuration file to override the DEFAULT_FFMPEG_BINARY */
+  public static final String FFMPEG_BINARY_CONFIG_KEY = "org.opencastproject.composer.ffmpeg.path";
+
+  /** The default path to the ffmpeg binary */
+  public static final String DEFAULT_FFMPEG_BINARY = "ffmpeg";
+
+  /** Path to the executable */
+  protected String ffmpegBinary = DEFAULT_FFMPEG_BINARY;
+
   private String host = "http://localhost:8080";
 
   private int retryCount = 3;
@@ -114,6 +132,14 @@ public class WaasEngine implements SpeechToTextEngine {
     fallbackLanguage = (String) cc.getProperties().get(WAAS_FALLBACK_LANGUAGE);
     client = HttpClient.newBuilder().build();
 
+    autoEncode = BooleanUtils.toBoolean(Objects.toString(
+        cc.getProperties().get(AUTO_ENCODING_CONFIG_KEY),
+        AUTO_ENCODING_DEFAULT.toString()));
+    logger.debug("Automatically convert input media: {}", autoEncode);
+
+    ffmpegBinary = Objects.toString(cc.getBundleContext().getProperty(FFMPEG_BINARY_CONFIG_KEY), DEFAULT_FFMPEG_BINARY);
+    logger.debug("ffmpeg binary set to {}", ffmpegBinary);
+
     logger.debug("Finished activating/updating speech-to-text service");
   }
 
@@ -132,11 +158,30 @@ public class WaasEngine implements SpeechToTextEngine {
   public Result generateSubtitlesFile(File mediaFile, File workingDirectory, String language, Boolean translate)
           throws SpeechToTextEngineException {
 
-    if (!mediaFile.getPath().toLowerCase().endsWith(".wav")) {
+    var whisperInput = mediaFile.getAbsolutePath();
+    if (autoEncode) {
+      whisperInput = FilenameUtils.concat(workingDirectory.getAbsolutePath(), UUID.randomUUID() + ".wav");
+      var ffmpegCommand = List.of(
+          ffmpegBinary,
+          "-i", mediaFile.getAbsolutePath(),
+          "-ar", "16000",
+          "-ac", "1",
+          "-c:a", "pcm_s16le",
+          whisperInput);
+      try {
+        execCommand(ffmpegCommand);
+      } catch (IOException e) {
+        throw new SpeechToTextEngineException("Failed to convert audio file", e);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    if (!whisperInput.toLowerCase().endsWith(".wav")) {
       throw new SpeechToTextEngineException("WaaS currently doesn't support any media extension other than wav");
     }
 
-    String outputName = FilenameUtils.getBaseName(mediaFile.getAbsolutePath());
+    String outputName = FilenameUtils.getBaseName(whisperInput);
     File vtt = new File(workingDirectory, outputName + ".vtt");
 
     if (language.isEmpty()) {
@@ -148,7 +193,7 @@ public class WaasEngine implements SpeechToTextEngine {
 
     try {
       var multiPartBody = new HTTPRequestMultipartBody.Builder().addPart("languageCode", language)
-          .addPart("audioFile", mediaFile, "audio/wav", mediaFile.getName()).build();
+          .addPart("audioFile", whisperInput, "audio/wav", whisperInput.getName()).build();
 
       var transcribe = HttpRequest.newBuilder().uri(URI.create(host + "/waas/transcribe"))
           .header("Content-Type",multiPartBody.getContentType())

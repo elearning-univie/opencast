@@ -27,10 +27,12 @@ import static javax.ws.rs.core.Response.Status.OK;
 
 import org.opencastproject.speechtotext.api.SpeechToTextEngine;
 import org.opencastproject.speechtotext.api.SpeechToTextEngineException;
+import org.opencastproject.util.IoSupport;
 
 import com.google.gson.Gson;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -40,10 +42,12 @@ import org.osgi.service.component.annotations.Modified;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.URI;
@@ -59,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
@@ -195,7 +200,7 @@ public class WaasEngine implements SpeechToTextEngine {
 
     try {
       var multiPartBody = new HTTPRequestMultipartBody.Builder().addPart("languageCode", language)
-          .addPart("audioFile", whisperInput, "audio/wav", whisperInput.getName()).build();
+          .addPart("audioFile", whisperInput, "audio/wav", outputName).build();
 
       var transcribe = HttpRequest.newBuilder().uri(URI.create(host + "/waas/transcribe"))
           .header("Content-Type",multiPartBody.getContentType())
@@ -437,5 +442,39 @@ public class WaasEngine implements SpeechToTextEngine {
 
     }
   }
+  private void execCommand(List<String> command) throws IOException, InterruptedException, SpeechToTextEngineException {
+    logger.info("Executing command: {}", command);
+    Process process = null;
 
+    try {
+      ProcessBuilder processBuilder = new ProcessBuilder(command);
+      processBuilder.redirectErrorStream(true);
+      processBuilder.redirectInput(ProcessBuilder.Redirect.PIPE)
+          .redirectError(ProcessBuilder.Redirect.PIPE)
+          .redirectOutput(ProcessBuilder.Redirect.PIPE);
+      process = processBuilder.start();
+
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        String line;
+        while ((line = in.readLine()) != null) { // consume process output
+          logger.debug(line);
+        }
+      }
+
+      // wait until the task is finished
+      int exitCode = process.waitFor();
+      logger.info("Process finished with exit code {}", exitCode);
+
+      if (exitCode != 0) {
+        var error = "";
+        try (var errorStream = process.getInputStream()) {
+          error = "\n Output:\n" + IOUtils.toString(errorStream, StandardCharsets.UTF_8);
+        }
+        throw new SpeechToTextEngineException(
+            String.format("Process exited abnormally with status %d (command: %s) %s", exitCode, command, error));
+      }
+    } finally {
+      IoSupport.closeQuietly(process);
+    }
+  }
 }

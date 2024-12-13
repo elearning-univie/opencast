@@ -31,6 +31,7 @@ import org.opencastproject.speechtotext.api.SpeechToTextEngineException;
 import com.google.gson.Gson;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 /** WaaS implementation of the Speech-to-text engine interface. */
 @Component(

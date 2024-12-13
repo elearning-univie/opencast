@@ -30,7 +30,7 @@ export interface SearchEpisodeResult {
     readonly mediapackage: MediaPackage;
     readonly languageShortCode: string;
     readonly licenseKey: string;
-    readonly isLive: boolean;
+    readonly live: boolean;
 }
 
 export interface SearchEpisodeResults {
@@ -149,7 +149,7 @@ export async function getConfig(): Promise<Config> {
 }
 
 export function filterLiveEvents(sr: SearchEpisodeResults) {
-    const filtered_results = sr.results.filter(result => result.isLive === false);
+    const filtered_results = sr.results.filter(result => !result.live);
     const filtered_sr : SearchEpisodeResults = {results: filtered_results, total : filtered_results.length, limit : sr.limit, offset : sr.offset};
     return filtered_sr
 }
@@ -203,6 +203,22 @@ const parseTracksFromResult = (result: any) => {
   return undefined;
 }
 
+const parseLiveFromResults = (result :any) : boolean => {
+    if (Array.isArray(result.mediapackage.media.track)) {
+        let live : boolean = false;
+        result.mediapackage.media.track.forEach( (track: any) => {
+            if ('live' in track && track.live === true) {
+                live = true;
+            }
+        } )
+        return live;
+    } else if (result.mediapackage.media.track !== null) {
+        if (!('live' in result.mediapackage.media.track)) { return false }
+        return result.mediapackage.media.track.live === true;
+    }
+    return false;
+}
+
 export async function searchEpisode(
     limit: number,
     offset: number,
@@ -244,7 +260,7 @@ export async function searchEpisode(
                     })),
                 tracks: parseTracksFromResult(result)
             },
-            isLive: result.mediapackage.media.track !== undefined ? result.mediapackage.media.track.isLive : false
+            live: parseLiveFromResults(result)
         })),
         total: response.data.total,
         limit: response.data.limit,

@@ -242,7 +242,7 @@ public final class SearchServiceIndex extends AbstractIndexProducer implements I
     }
     var mediaPackageId = mediaPackage.getIdentifier().toString();
 
-    checkSearchEntityWritePermission(mediaPackageId);
+    checkMPWritePermission(mediaPackageId);
 
     logger.debug("Attempting to add media package {} to search index", mediaPackageId);
     final var acls = new AccessControlList[1];
@@ -267,11 +267,10 @@ public final class SearchServiceIndex extends AbstractIndexProducer implements I
 
   private void indexMediaPackage(MediaPackage mediaPackage, AccessControlList acl)
           throws SearchException, SearchServiceDatabaseException {
-    indexMediaPackage(mediaPackage, acl, null, null, securityService.getOrganization().getId());
+    indexMediaPackage(mediaPackage, acl, null, null);
   }
 
-  private void indexMediaPackage(MediaPackage mediaPackage, AccessControlList acl, Date modDate, Date delDate,
-      String orgId)
+  private void indexMediaPackage(MediaPackage mediaPackage, AccessControlList acl, Date modDate, Date delDate)
           throws SearchException, SearchServiceDatabaseException {
     String mediaPackageId = mediaPackage.getIdentifier().toString();
     String orgId = securityService.getOrganization().getId();
@@ -359,11 +358,12 @@ public final class SearchServiceIndex extends AbstractIndexProducer implements I
     }
   }
 
-  private void checkSearchEntityWritePermission(final String mediaPackageId) throws SearchException {
+  private void checkMPWritePermission(final String mediaPackageId) throws SearchException {
     User user = securityService.getUser();
     try {
+      MediaPackage mp = persistence.getMediaPackage(mediaPackageId);
       AccessControlList acl = persistence.getAccessControlList(mediaPackageId);
-      if (!authorizationService.hasPermission(acl, Permissions.Action.WRITE.toString())) {
+      if (!authorizationService.hasPermission(mp, Permissions.Action.WRITE.toString())) {
         boolean isAdmin = user.getRoles().stream()
             .map(Role::getName)
             .anyMatch(r -> r.equals(SecurityConstants.GLOBAL_ADMIN_ROLE));
@@ -392,7 +392,7 @@ public final class SearchServiceIndex extends AbstractIndexProducer implements I
    */
   public boolean deleteSynchronously(final String mediaPackageId) throws SearchException {
 
-    checkSearchEntityWritePermission(mediaPackageId);
+    checkMPWritePermission(mediaPackageId);
 
     String deletionString = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
 
@@ -530,7 +530,7 @@ public final class SearchServiceIndex extends AbstractIndexProducer implements I
 
             current.getAndIncrement();
 
-            indexMediaPackage(mediaPackage, acl, modificationDate, deletionDate, tuple.getB());
+            indexMediaPackage(mediaPackage, acl, modificationDate, deletionDate);
           } catch (SearchServiceDatabaseException e) {
             logIndexRebuildError(logger, total, current.get(), e);
             //NB: Runtime exception thrown to escape the functional interfacing

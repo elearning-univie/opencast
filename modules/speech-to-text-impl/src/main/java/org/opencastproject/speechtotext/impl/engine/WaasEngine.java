@@ -146,9 +146,18 @@ public class WaasEngine implements SpeechToTextEngine {
     }
     String subtitleLanguage = language;
 
+    if (translate) {
+      subtitleLanguage = "en";
+    }
+
+    if (translate && language.equals(subtitleLanguage)) {
+      logger.warn("Translation is enabled but source and target language are equal {} {}", language, subtitleLanguage);
+    }
+
     try {
       var multiPartBody = new HTTPRequestMultipartBody.Builder().addPart("languageCode", language)
-          .addPart("audioFile", mediaFile, "audio/wav", mediaFile.getName()).build();
+          .addPart("audioFile", mediaFile, "audio/wav", mediaFile.getName())
+              .addPart("translate", String.valueOf(translate)).build();
 
       var transcribe = HttpRequest.newBuilder().uri(URI.create(host + "/waas/transcribe"))
           .header("Content-Type",multiPartBody.getContentType())
@@ -186,6 +195,9 @@ public class WaasEngine implements SpeechToTextEngine {
           break;
         } else if (state == TranscriptionState.FAILED) {
           throw new SpeechToTextEngineException("WaaS transcription job failed");
+        } else if (state == TranscriptionState.NO_AUDIO) {
+          logger.warn("Transcription job failed: no audio");
+          break;
         }
 
         try {
@@ -231,7 +243,8 @@ public class WaasEngine implements SpeechToTextEngine {
     PENDING,
     IN_PROGRESS,
     COMPLETED,
-    FAILED
+    FAILED,
+    NO_AUDIO
   }
 
   public static class TranscriptionJob {

@@ -29,10 +29,19 @@ public interface SpeechToTextEngine {
   class Result {
     private final String language;
     private final File subtitleFile;
+    private boolean isEmpty = false;
 
     public Result(String language, File subtitleFile) {
       this.language = language;
       this.subtitleFile = subtitleFile;
+
+      if (subtitleFile == null || subtitleFile.length() == 0) {
+        isEmpty = true;
+      }
+    }
+
+    public static Result empty() {
+      return new Result(null, null);
     }
 
     public String getLanguage() {
@@ -41,6 +50,10 @@ public interface SpeechToTextEngine {
 
     public File getSubtitleFile() {
       return subtitleFile;
+    }
+
+    public boolean isEmpty() {
+      return isEmpty;
     }
   }
 

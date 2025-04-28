@@ -146,7 +146,7 @@ public class SpeechToTextServiceImpl extends AbstractJobProducer implements Spee
     }
     URI subtitleFilesURI;
     var name = String.format("job-%d", job.getId());
-    var jobDir  = Path.of(workspace.rootDirectory(), "collection", COLLECTION, name).toFile();
+    var jobDir = Path.of(workspace.rootDirectory(), "collection", COLLECTION, name).toFile();
 
     try {
       // prepare the output file
@@ -154,6 +154,11 @@ public class SpeechToTextServiceImpl extends AbstractJobProducer implements Spee
       SpeechToTextEngine.Result result = speechToTextEngine.generateSubtitlesFile(
               workspace.get(mediaFile), jobDir, language, translate);
       language = result.getLanguage();
+
+      // if the result is empty, we need to return an empty string
+      if (result.isEmpty()) {
+        return "NO_RESULT";
+      }
 
       // we need to call the "putInCollection" method to get
       // a URI, that can be used in the following processes

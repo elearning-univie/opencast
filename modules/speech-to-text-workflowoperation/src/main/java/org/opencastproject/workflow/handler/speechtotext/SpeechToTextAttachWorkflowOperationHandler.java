@@ -114,50 +114,19 @@ public class SpeechToTextAttachWorkflowOperationHandler extends AbstractWorkflow
     // get previously started speech-to-text jobs
     var jobIds = Objects.toString(workflowInstance.getConfiguration(JOBS_WORKFLOW_CONFIGURATION), "");
     if (jobIds.isEmpty()) {
-      logger.info("No speech-to-text jobs to attach. Skipping.");
+      logger.info("No speechtotext jobs to attach. Skipping.");
       return createResult(mediaPackage, WorkflowOperationResult.Action.SKIP);
     }
 
-    int attachedSubtitles = 0;
     for (var jobId: jobIds.split(",")) {
       ConfiguredTagsAndFlavors tagsAndFlavors = getTagsAndFlavors(workflowInstance,
           Configuration.none, Configuration.none,
           Configuration.many, Configuration.one);
-
-      Job job;
-      try {
-        job = serviceRegistry.getJob(Long.parseLong(jobId));
-      } catch (NotFoundException | ServiceRegistryException e) {
-        throw new WorkflowOperationException(
-                String.format("Could not find speechtotext job %s", jobId), e);
-      }
-
-      if (!"speechtotext".equals(job.getOperation())) {
-        throw  new WorkflowOperationException(String.format(
-                "Job %s is on type %s. Expected `speechtotext`", job.getId(), job.getOperation()));
-      }
-
-      if (!waitForStatus(job).isSuccess()) {
-        throw new WorkflowOperationException(
-                String.format("Speech-to-text job for media package '%s' failed", mediaPackage));
-      }
-
-      if (job.getPayload().equals("NO_RESULT")) {
-        logger.info("No output from speech-to-text job {}.", job.getId());
-        continue;
-      }
-
-      attachSubtitle(job, mediaPackage, tagsAndFlavors, appendSubtitleAs);
-      attachedSubtitles++;
+      attachSubtitle(Long.parseLong(jobId), mediaPackage, tagsAndFlavors, appendSubtitleAs);
     }
 
     // Remove tracked jobs from workflow
     workflowInstance.getConfigurations().remove(JOBS_WORKFLOW_CONFIGURATION);
-
-    if (attachedSubtitles == 0) {
-      logger.info("No speech-to-text attachment. Skipping.");
-      return createResult(mediaPackage, WorkflowOperationResult.Action.SKIP);
-    }
 
     logger.info("Speech-To-Text workflow operation for media package {} completed", mediaPackage);
     return createResult(mediaPackage, WorkflowOperationResult.Action.CONTINUE);
@@ -166,16 +135,32 @@ public class SpeechToTextAttachWorkflowOperationHandler extends AbstractWorkflow
   /**
    * Creates the subtitle file for a track and appends it to the media package.
    *
-   * @param job The job that contains the subtitle file.
+   * @param jobId Identifier of the speectotext job
    * @param mediaPackage The media package where the track is located.
    * @param tagsAndFlavors Tags and flavors instance (to get target flavor information)
    * @param appendSubtitleAs Tells how the subtitles file has to be appended.
    * @throws WorkflowOperationException Get thrown if an error occurs.
    */
-  private void attachSubtitle(Job job, MediaPackage mediaPackage, ConfiguredTagsAndFlavors tagsAndFlavors,
+  private void attachSubtitle(long jobId, MediaPackage mediaPackage, ConfiguredTagsAndFlavors tagsAndFlavors,
       AppendSubtitleAs appendSubtitleAs) throws WorkflowOperationException {
 
-    logger.info("Attaching subtitle from job '{}' to media package {}", job.getId(), mediaPackage);
+    logger.info("Attaching subtitle from job '{}' to media package {}", jobId, mediaPackage);
+    Job job;
+    try {
+      job = serviceRegistry.getJob(jobId);
+    } catch (NotFoundException | ServiceRegistryException e) {
+      throw new WorkflowOperationException(
+              String.format("Could not find speechtotext job %s", jobId), e);
+    }
+    if (!"speechtotext".equals(job.getOperation())) {
+      throw  new WorkflowOperationException(String.format(
+          "Job %s is on type %s. Expected `speechtotext`", jobId, job.getOperation()));
+    }
+
+    if (!waitForStatus(job).isSuccess()) {
+      throw new WorkflowOperationException(
+              String.format("Speechtotext job for media package '%s' failed", mediaPackage));
+    }
 
     // add subtitle to media package
     try {

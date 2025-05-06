@@ -54,7 +54,6 @@ import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -196,9 +195,9 @@ public class WaasEngine implements SpeechToTextEngine {
           break;
         } else if (state == TranscriptionState.FAILED) {
           throw new SpeechToTextEngineException("WaaS transcription job failed");
-        } else if (EnumSet.of(TranscriptionState.CANCELLED, TranscriptionState.NO_SPEECH).contains(state)) {
-          logger.info("Transcription job {} was cancelled or no speech detected", job.getId());
-          return SpeechToTextEngine.Result.empty();
+        } else if (state == TranscriptionState.NO_AUDIO) {
+          logger.warn("Transcription job failed: no audio");
+          break;
         }
 
         try {
@@ -245,8 +244,7 @@ public class WaasEngine implements SpeechToTextEngine {
     IN_PROGRESS,
     COMPLETED,
     FAILED,
-    NO_SPEECH,
-    CANCELLED
+    NO_AUDIO
   }
 
   public static class TranscriptionJob {

@@ -14,7 +14,7 @@
     <opencast.basedir>${project.basedir}/../..</opencast.basedir>
     <checkstyle.skip>false</checkstyle.skip>
     <interface.url>https://ci-release:glpat-b9ZsPcqK8TyJNd1KmSYq@gitlab-amc.univie.ac.at/api/v4/projects/491/packages/generic/opencast-admin-interface/master/opencast-admin-interface.tar.gz</interface.url>
-    <interface.sha256>6bf5dd03da213caad097981e6fe86ec0e62439e6c5a079e068ed5bdb1687520f</interface.sha256>
+    <interface.sha256>71f761438b5aaf7d5af4428d17995c5d7bc47b7f54eb6890789f5896466d3304</interface.sha256>
   </properties>
   <build>
     <plugins>

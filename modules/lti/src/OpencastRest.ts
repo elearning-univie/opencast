@@ -31,6 +31,7 @@ export interface SearchEpisodeResult {
     readonly mediapackage: MediaPackage;
     readonly languageShortCode: string;
     readonly licenseKey: string;
+    readonly isLive: boolean;
 }
 
 export interface SearchEpisodeResults {
@@ -272,7 +273,8 @@ export async function searchEpisode(
                         url: attachment.url
                     })),
                 tracks: parseTracksFromResult(result)
-            }
+            },
+            isLive: result.mediapackage?.media?.track?.includes((track: any) => track.live === true)
         })),
         total: response.data.total,
         limit: response.data.limit,
